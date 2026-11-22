@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your personal AI job-search assistant. Get matched jobs, ATS-ready resumes, tailored applications and insider contacts — all running privately on your machine.">
+    <meta name="theme-color" content="#f97316">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{% block title %}HireMate{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa',
+                            300: '#fdba74', 400: '#fb923c', 500: '#f97316',
+                            600: '#ea580c', 700: '#c2410c', 800: '#9a3412',
+                            900: '#7c2d12', 950: '#431407',
+                        },
+                        surface: {
+                            50: '#1c1c1e',
+                            100: '#1a1a1c',
+                            200: '#28282b',
+                            300: '#333336',
+                            400: '#48484a',
+                            500: '#636366',
+                            600: '#8e8e93',
+                            700: '#aeaeb2',
+                            800: '#d1d1d6',
+                            900: '#0d0d0f',
+                            950: '#08080a',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.8/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Prefetch all pages for instant navigation -->
+    {% set pages = ['/dashboard', '/jobs', '/resume', '/apply', '/tracker', '/profile', '/settings'] %}
+    {% for page in pages %}
+    {% if request.path != page %}<link rel="prefetch" href="{{ page }}">{% endif %}
+    {% endfor %}
+</head>
+<body class="bg-surface-950 font-sans text-gray-100 antialiased">
+    <!-- Navigation -->
+    <nav class="fixed top-0 inset-x-0 z-50 bg-surface-950/80 backdrop-blur-xl border-b border-white/10" x-data="{ mobileOpen: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center gap-2.5 flex-shrink-0">
+                    <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="hGrad" x1="0" y1="0" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#A855F7"/>
+                                <stop offset="100%" stop-color="#7C3AED"/>
+                            </linearGradient>
+                            <linearGradient id="swoosh" x1="0" y1="0" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#F97316"/>
+                                <stop offset="100%" stop-color="#FB923C"/>
+                            </linearGradient>
+                        </defs>
+                        <!-- H letter -->
+                        <path d="M22 20 C22 16, 26 14, 30 14 L36 14 C40 14, 42 16, 42 20 L42 42 L58 42 L58 20 C58 16, 60 14, 64 14 L70 14 C74 14, 76 16, 76 20 L76 80 C76 84, 74 86, 70 86 L64 86 C60 86, 58 84, 58 80 L58 58 L42 58 L42 80 C42 84, 40 86, 36 86 L30 86 C26 86, 22 84, 22 80 Z" fill="url(#hGrad)" rx="4"/>
+                        <!-- Orange swoosh orbit -->
+                        <ellipse cx="50" cy="60" rx="42" ry="14" stroke="url(#swoosh)" stroke-width="5" fill="none" transform="rotate(-25 50 60)" stroke-linecap="round" opacity="0.9"/>
+                        <!-- Sparkle star -->
+                        <path d="M72 8 L74 14 L80 16 L74 18 L72 24 L70 18 L64 16 L70 14 Z" fill="#C084FC"/>
+                        <circle cx="72" cy="16" r="2" fill="white" opacity="0.8"/>
+                    </svg>
+                    <span class="text-xl font-bold">
+                        <span class="text-white">Hire</span><span class="bg-gradient-to-r from-brand-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">Mate</span>
+                    </span>
+                </a>
+
+                <!-- Desktop nav — clean spaced links like NextRaise -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+                    <a href="/jobs" class="nav-item {% if request.path == '/jobs' %}active{% endif %}">Find Jobs</a>
+                    <a href="/resume" class="nav-item {% if request.path == '/resume' %}active{% endif %}">Resume AI</a>
+                    <a href="/apply" class="nav-item {% if request.path == '/apply' %}active{% endif %}">Apply</a>
+                    <a href="/tracker" class="nav-item {% if request.path == '/tracker' %}active{% endif %}">Tracker</a>
+                    <a href="/profile" class="nav-item {% if request.path == '/profile' %}active{% endif %}">Profile</a>
+                </div>
+
+                <!-- Right side -->
+                <div class="hidden md:flex items-center gap-3 flex-shrink-0">
+                    {% if ai_status is defined and ai_status.available %}
+                    <span class="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>AI Active
+                    </span>
+                    {% else %}
+                    <a href="/settings" class="flex items-center gap-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full hover:bg-amber-500/20 transition">
+                        <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>Setup AI
+                    </a>
+                    {% endif %}
+                    <a href="/settings" class="p-2 text-gray-500 hover:text-brand-400 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </a>
+                </div>
+
+                <!-- Mobile hamburger -->
+                <button @click="mobileOpen = !mobileOpen" class="md:hidden p-2 text-gray-400 hover:text-white transition">
+                    <svg x-show="!mobileOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg x-show="mobileOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div x-show="mobileOpen" x-transition class="md:hidden bg-surface-950 border-b border-white/10 px-4 py-3 space-y-1">
+            <a href="/dashboard" class="nav-item-mobile {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/jobs" class="nav-item-mobile {% if request.path == '/jobs' %}active{% endif %}">Find Jobs</a>
+            <a href="/resume" class="nav-item-mobile {% if request.path == '/resume' %}active{% endif %}">Resume AI</a>
+            <a href="/apply" class="nav-item-mobile {% if request.path == '/apply' %}active{% endif %}">Apply</a>
+            <a href="/tracker" class="nav-item-mobile {% if request.path == '/tracker' %}active{% endif %}">Tracker</a>
+            <a href="/profile" class="nav-item-mobile {% if request.path == '/profile' %}active{% endif %}">Profile</a>
+            <div class="border-t border-white/5 pt-2 mt-2">
+                <a href="/settings" class="nav-item-mobile {% if request.path == '/settings' %}active{% endif %}">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-16 animate-in">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-surface-950 border-t border-white/5 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Features</h4>
+                    <div class="space-y-2 text-sm text-gray-500">
+                        <a href="/resume" class="block hover:text-brand-400 transition">Resume AI</a>
+                        <a href="/jobs" class="block hover:text-brand-400 transition">Job Match</a>
+                        <a href="/find-hr" class="block hover:text-brand-400 transition">Find HR</a>
+                        <a href="/tracker" class="block hover:text-brand-400 transition">Job Tracker</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Tools</h4>
+                    <div class="space-y-2 text-sm text-gray-500">
+                        <a href="/tools/ats-checker" class="block hover:text-brand-400 transition">ATS Checker</a>
+                        <a href="/resume" class="block hover:text-brand-400 transition">Resume Tailor</a>
+                        <a href="/resume" class="block hover:text-brand-400 transition">Cover Letter</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Privacy</h4>
+                    <div class="space-y-2 text-sm text-gray-500">
+                        <span class="block">Runs 100% locally</span>
+                        <span class="block">Your data stays private</span>
+                        <span class="block">AI-powered insights</span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">About</h4>
+                    <p class="text-sm text-gray-500">HireMate is your personal AI job-search assistant running entirely on your machine.</p>
+                </div>
+            </div>
+            <div class="mt-10 pt-6 border-t border-white/5 text-center text-sm text-gray-600">
+                HireMate v1.0 &middot; Your data never leaves your machine &middot; <kbd class="bg-surface-200 text-gray-500 px-1 py-0.5 rounded text-xs font-mono">Ctrl+K</kbd> Search
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/static/sw.js').catch(()=>{});</script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

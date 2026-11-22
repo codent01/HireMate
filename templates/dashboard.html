@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - HireMate{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+            <p class="text-gray-500 text-sm mt-1">Your job search at a glance</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="hidden md:flex items-center gap-1.5 text-xs text-gray-600 bg-surface-100 border border-white/5 px-3 py-1.5 rounded-lg">
+                <kbd class="bg-surface-300 text-gray-400 px-1.5 py-0.5 rounded text-[10px] font-mono">Ctrl+K</kbd>
+                <span>Search jobs</span>
+            </div>
+            <a href="/resume" class="btn-primary text-sm">Upload Resume</a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card">
+            <div class="text-3xl font-bold text-brand-500">{{ stats.total or 0 }}</div>
+            <div class="text-sm text-gray-500 mt-1">Total Applications</div>
+        </div>
+        <div class="stat-card">
+            <div class="text-3xl font-bold text-emerald-500">{{ stats.by_status.get('interview', 0) }}</div>
+            <div class="text-sm text-gray-500 mt-1">Interviews</div>
+        </div>
+        <div class="stat-card">
+            <div class="text-3xl font-bold text-amber-500">{{ stats.by_status.get('applied', 0) }}</div>
+            <div class="text-sm text-gray-500 mt-1">Applied</div>
+        </div>
+        <div class="stat-card">
+            <div class="text-3xl font-bold text-purple-500">{{ resumes|length }}</div>
+            <div class="text-sm text-gray-500 mt-1">Resumes</div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+        <!-- Resume Status -->
+        <div class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <h3 class="font-semibold text-lg text-white mb-4">Resume Status</h3>
+            {% if primary_resume %}
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-brand-500/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-sm text-white">{{ primary_resume.filename }}</div>
+                        <div class="text-xs text-gray-500">Primary Resume</div>
+                    </div>
+                </div>
+                {% if primary_resume.ats_score %}
+                <div class="bg-brand-500/5 border border-brand-500/10 rounded-xl p-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-400">ATS Score</span>
+                        <span class="text-xl font-bold text-brand-500">{{ primary_resume.ats_score }}/100</span>
+                    </div>
+                    <div class="w-full bg-surface-300 rounded-full h-2 mt-2">
+                        <div class="bg-brand-500 h-2 rounded-full" style="width:{{ primary_resume.ats_score }}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <a href="/resume" class="text-sm text-brand-500 hover:underline">Run ATS check &rarr;</a>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center py-6">
+                <div class="w-12 h-12 bg-surface-300 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                </div>
+                <p class="text-sm text-gray-500 mb-3">No resume uploaded yet</p>
+                <a href="/resume" class="btn-primary text-sm">Upload Resume</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <h3 class="font-semibold text-lg text-white mb-4">Quick Actions</h3>
+            <div class="space-y-2">
+                <a href="/jobs" class="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-200 transition group">
+                    <div class="w-9 h-9 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-300">Search Jobs</span>
+                </a>
+                <a href="/tools/ats-checker" class="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-200 transition group">
+                    <div class="w-9 h-9 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-300">ATS Check</span>
+                </a>
+                <a href="/find-hr" class="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-200 transition group">
+                    <div class="w-9 h-9 bg-rose-500/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-300">Find HR Contacts</span>
+                </a>
+                <a href="/tracker" class="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-200 transition group">
+                    <div class="w-9 h-9 bg-amber-500/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-300">Track Applications</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-lg text-white">Recent Applications</h3>
+                <a href="/tracker" class="text-sm text-brand-500 hover:underline">View all</a>
+            </div>
+            {% if recent_apps %}
+            <div class="space-y-3">
+                {% for app in recent_apps %}
+                <div class="flex items-center gap-3 p-2">
+                    <div class="w-8 h-8 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 font-bold text-xs">
+                        {{ app.company[:2] if app.company else 'J' }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-white truncate">{{ app.job_title }}</div>
+                        <div class="text-xs text-gray-500">{{ app.company or 'Unknown' }}</div>
+                    </div>
+                    <span class="status-badge status-{{ app.status }}">{{ app.status }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-6">No applications yet. Start searching!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Getting Started Guide (shown when no resumes) -->
+    {% if not primary_resume and stats.total == 0 %}
+    <div class="mt-8 bg-gradient-to-br from-brand-600/10 via-surface-100 to-purple-600/10 rounded-2xl border border-brand-500/20 p-6 md:p-8">
+        <h3 class="text-lg font-bold text-white mb-1">Welcome to HireMate</h3>
+        <p class="text-sm text-gray-400 mb-6">Get started in 3 simple steps</p>
+        <div class="grid md:grid-cols-3 gap-4">
+            <a href="/resume" class="flex items-start gap-3 p-4 bg-surface-950/50 rounded-xl border border-white/5 hover:border-brand-500/30 transition group">
+                <div class="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm font-black text-brand-500">1</span>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-white group-hover:text-brand-400 transition">Upload Resume</div>
+                    <div class="text-xs text-gray-500 mt-0.5">Drop your PDF or DOCX to get started</div>
+                </div>
+            </a>
+            <a href="/profile" class="flex items-start gap-3 p-4 bg-surface-950/50 rounded-xl border border-white/5 hover:border-brand-500/30 transition group">
+                <div class="w-8 h-8 bg-purple-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm font-black text-purple-500">2</span>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-white group-hover:text-brand-400 transition">Build Profile</div>
+                    <div class="text-xs text-gray-500 mt-0.5">Fill in your skills and experience</div>
+                </div>
+            </a>
+            <a href="/settings" class="flex items-start gap-3 p-4 bg-surface-950/50 rounded-xl border border-white/5 hover:border-brand-500/30 transition group">
+                <div class="w-8 h-8 bg-emerald-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm font-black text-emerald-500">3</span>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-white group-hover:text-brand-400 transition">Connect AI</div>
+                    <div class="text-xs text-gray-500 mt-0.5">Setup Ollama for free AI features</div>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if ai_status is defined and not ai_status.available %}
+    <div class="mt-8 bg-brand-500/5 border border-brand-500/20 rounded-xl p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-brand-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+        <div>
+            <div class="font-medium text-brand-400 text-sm">AI not connected</div>
+            <div class="text-xs text-gray-500 mt-1">
+                Go to <a href="/settings" class="text-brand-400 hover:underline">Settings</a> to configure a free AI provider like Ollama, or connect your own API key.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

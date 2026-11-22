@@ -1,0 +1,17 @@
+{
+  "name": "HireMate",
+  "short_name": "HireMate",
+  "description": "Your personal AI job-search assistant. 100% local & private.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#08080a",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

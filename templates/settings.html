@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Settings - HireMate{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="settingsApp()">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-white">Settings</h1>
+        <p class="text-gray-500 text-sm mt-1">Configure your AI provider and preferences</p>
+    </div>
+
+    <!-- AI Status -->
+    <div class="bg-surface-100 rounded-2xl border border-white/5 p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="font-semibold text-white">AI Provider</h2>
+                <p class="text-sm text-gray-500 mt-1" x-text="aiName"></p>
+            </div>
+            <span class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
+                  :class="aiAvailable ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' : 'text-red-400 bg-red-500/10 border border-red-500/20'">
+                <span class="w-1.5 h-1.5 rounded-full" :class="aiAvailable ? 'bg-emerald-400' : 'bg-red-400'"></span>
+                <span x-text="aiAvailable ? 'Connected' : 'Not Connected'"></span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Provider Selection -->
+    <div class="bg-surface-100 rounded-2xl border border-white/5 p-6 mb-6">
+        <h3 class="font-semibold text-white mb-4">Choose Provider</h3>
+        <div class="grid grid-cols-3 gap-3">
+            <button @click="provider = 'ollama'" class="p-4 rounded-xl border-2 transition text-left"
+                    :class="provider === 'ollama' ? 'border-brand-500 bg-brand-500/5' : 'border-white/5 bg-surface-200 hover:border-white/10'">
+                <div class="font-bold text-white text-sm">Ollama</div>
+                <div class="text-xs text-gray-500 mt-1">Free, local AI</div>
+                <div class="text-xs text-emerald-400 mt-2 font-medium">FREE</div>
+            </button>
+            <button @click="provider = 'openai'" class="p-4 rounded-xl border-2 transition text-left"
+                    :class="provider === 'openai' ? 'border-brand-500 bg-brand-500/5' : 'border-white/5 bg-surface-200 hover:border-white/10'">
+                <div class="font-bold text-white text-sm">LM Studio</div>
+                <div class="text-xs text-gray-500 mt-1">OpenAI-compatible</div>
+                <div class="text-xs text-emerald-400 mt-2 font-medium">FREE</div>
+            </button>
+            <button @click="provider = 'claude'" class="p-4 rounded-xl border-2 transition text-left"
+                    :class="provider === 'claude' ? 'border-brand-500 bg-brand-500/5' : 'border-white/5 bg-surface-200 hover:border-white/10'">
+                <div class="font-bold text-white text-sm">Claude</div>
+                <div class="text-xs text-gray-500 mt-1">Anthropic API</div>
+                <div class="text-xs text-amber-400 mt-2 font-medium">Paid API</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Ollama Config -->
+    <div x-show="provider === 'ollama'" class="bg-surface-100 rounded-2xl border border-white/5 p-6 mb-6">
+        <h3 class="font-semibold text-white mb-4">Ollama Configuration</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Server URL</label>
+                <input type="text" x-model="ollamaUrl" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Model</label>
+                <div class="flex gap-2">
+                    <select x-model="ollamaModel" class="flex-1 bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                        <template x-if="ollamaModels.length === 0">
+                            <option value="llama3.1">llama3.1 (type manually)</option>
+                        </template>
+                        <template x-for="m in ollamaModels">
+                            <option :value="m" x-text="m"></option>
+                        </template>
+                    </select>
+                    <button @click="refreshModels()" class="btn-secondary text-xs px-4">Refresh</button>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">Don't have Ollama? Install from <span class="text-brand-400">ollama.com</span> then run: <code class="bg-surface-300 px-1.5 py-0.5 rounded text-brand-400">ollama pull llama3.1</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- OpenAI-compatible Config -->
+    <div x-show="provider === 'openai'" class="bg-surface-100 rounded-2xl border border-white/5 p-6 mb-6">
+        <h3 class="font-semibold text-white mb-4">LM Studio / OpenAI-Compatible</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">API Base URL</label>
+                <input type="text" x-model="openaiUrl" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Model Name</label>
+                <input type="text" x-model="openaiModel" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">API Key (optional)</label>
+                <input type="password" x-model="openaiKey" placeholder="Leave empty for local models" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+        </div>
+    </div>
+
+    <!-- Claude Config -->
+    <div x-show="provider === 'claude'" class="bg-surface-100 rounded-2xl border border-white/5 p-6 mb-6">
+        <h3 class="font-semibold text-white mb-4">Claude (Anthropic)</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">API Key</label>
+                <input type="password" x-model="anthropicKey" placeholder="sk-ant-..." class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Model</label>
+                <select x-model="anthropicModel" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                    <option value="claude-haiku-4-20250414">Claude Haiku 4</option>
+                </select>
+                <p class="text-xs text-gray-600 mt-2">Requires <code class="bg-surface-300 px-1.5 py-0.5 rounded text-brand-400">pip install anthropic</code></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+        <button @click="saveSettings()" :disabled="saving" class="btn-primary flex items-center gap-2">
+            <span x-show="!saving">Save Settings</span>
+            <span x-show="saving" class="flex items-center gap-2">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Saving...
+            </span>
+        </button>
+        <button @click="testConnection()" :disabled="testing" class="btn-secondary flex items-center gap-2">
+            <span x-show="!testing">Test Connection</span>
+            <span x-show="testing" class="flex items-center gap-2">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Testing...
+            </span>
+        </button>
+    </div>
+
+    <!-- Test Result -->
+    <div x-show="testResult" class="mt-4 p-4 rounded-xl border" :class="testResult?.ok ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-red-500/10 border-red-500/20 text-red-300'">
+        <p class="text-sm" x-text="testResult?.ok ? 'Connected! ' + (testResult.response || '') : 'Connection failed: ' + (testResult?.error || 'Unknown error')"></p>
+    </div>
+</div>
+
+<script>
+function settingsApp() {
+    return {
+        provider: '{{ settings.ai_provider }}',
+        ollamaUrl: '{{ settings.ollama_url }}',
+        ollamaModel: '{{ settings.ollama_model }}',
+        ollamaModels: {{ ollama_models | tojson }},
+        openaiUrl: '{{ settings.openai_url }}',
+        openaiModel: '{{ settings.openai_model }}',
+        openaiKey: '{{ settings.openai_api_key }}',
+        anthropicKey: '{{ settings.anthropic_api_key }}',
+        anthropicModel: '{{ settings.anthropic_model }}',
+        aiAvailable: {{ 'true' if ai_available else 'false' }},
+        aiName: '{{ ai_name }}',
+        saving: false, testing: false, testResult: null,
+
+        getPayload() {
+            return {
+                ai_provider: this.provider,
+                ollama_url: this.ollamaUrl,
+                ollama_model: this.ollamaModel,
+                openai_url: this.openaiUrl,
+                openai_model: this.openaiModel,
+                openai_api_key: this.openaiKey,
+                anthropic_api_key: this.anthropicKey,
+                anthropic_model: this.anthropicModel,
+            };
+        },
+
+        async saveSettings() {
+            this.saving = true;
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(this.getPayload()),
+            });
+            this.saving = false;
+            showToast('Settings saved!');
+            location.reload();
+        },
+
+        async testConnection() {
+            this.testing = true;
+            this.testResult = null;
+            try {
+                const resp = await fetch('/api/settings/test', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(this.getPayload()),
+                });
+                this.testResult = await resp.json();
+            } catch (e) {
+                this.testResult = { ok: false, error: 'Request failed' };
+            }
+            this.testing = false;
+        },
+
+        async refreshModels() {
+            try {
+                const resp = await fetch('/api/settings/ollama-models');
+                const data = await resp.json();
+                this.ollamaModels = data.models || [];
+                if (this.ollamaModels.length > 0) showToast(`Found ${this.ollamaModels.length} models`);
+                else showToast('No models found. Run: ollama pull llama3.1', 'error');
+            } catch (e) {
+                showToast('Could not connect to Ollama', 'error');
+            }
+        },
+    }
+}
+</script>
+{% endblock %}

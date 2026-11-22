@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Application Tracker - HireMate{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="tracker()">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Application Tracker</h1>
+            <p class="text-gray-500 text-sm mt-1">Track every application from saved to offer</p>
+        </div>
+        <button @click="showAddModal = true" class="btn-primary text-sm">+ Add Application</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
+        <div class="stat-card cursor-pointer" :class="filter === '' ? 'ring-2 ring-brand-500' : ''" @click="filter = ''">
+            <div class="text-2xl font-bold text-white">{{ stats.total or 0 }}</div>
+            <div class="text-xs text-gray-500">All</div>
+        </div>
+        {% for status in ['saved', 'applied', 'screening', 'interview', 'offer', 'rejected'] %}
+        <div class="stat-card cursor-pointer" :class="filter === '{{ status }}' ? 'ring-2 ring-brand-500' : ''" @click="filter = '{{ status }}'">
+            <div class="text-2xl font-bold {% if status == 'offer' %}text-emerald-500{% elif status == 'interview' %}text-purple-500{% elif status == 'rejected' %}text-red-500{% elif status == 'applied' %}text-amber-500{% elif status == 'screening' %}text-blue-500{% else %}text-gray-400{% endif %}">{{ stats.by_status.get(status, 0) }}</div>
+            <div class="text-xs text-gray-500 capitalize">{{ status }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Applications List -->
+    <div class="space-y-3">
+        {% for app in applications %}
+        <div class="bg-surface-100 rounded-xl border border-white/5 hover:border-brand-500/20 transition p-4"
+             x-show="!filter || filter === '{{ app.status }}'" x-data="{ expanded: false }">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 font-bold text-sm flex-shrink-0">
+                    {{ (app.company or 'J')[:2] | upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-white truncate">{{ app.job_title }}</div>
+                    <div class="text-sm text-gray-500">{{ app.company or '' }} {% if app.location %}&middot; {{ app.location }}{% endif %}</div>
+                </div>
+
+                <select @change="updateStatus({{ app.id }}, $event.target.value)" class="bg-surface-300 border border-white/5 rounded-lg px-3 py-1.5 text-xs font-medium text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    {% for s in ['saved', 'applied', 'screening', 'interview', 'offer', 'rejected'] %}
+                    <option value="{{ s }}" {% if app.status == s %}selected{% endif %}>{{ s | capitalize }}</option>
+                    {% endfor %}
+                </select>
+
+                {% if app.match_score %}
+                <span class="px-2 py-1 bg-brand-500/15 text-brand-400 rounded-full text-xs font-bold">{{ app.match_score }}%</span>
+                {% endif %}
+
+                <button @click="expanded = !expanded" class="p-1.5 hover:bg-surface-200 rounded-lg transition">
+                    <svg class="w-4 h-4 text-gray-500 transition" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div x-show="expanded" x-transition class="mt-4 pt-4 border-t border-white/5">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <div class="text-xs text-gray-500">Applied</div>
+                        <div class="font-medium text-gray-300">{{ app.applied_date or 'Not yet' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500">Response</div>
+                        <div class="font-medium text-gray-300">{{ app.response_date or '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500">Interview</div>
+                        <div class="font-medium text-gray-300">{{ app.interview_date or '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500">URL</div>
+                        {% if app.url %}
+                        <a href="{{ app.url }}" target="_blank" class="text-brand-500 hover:underline truncate block">Link</a>
+                        {% else %}
+                        <span class="text-gray-500">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if app.notes %}
+                <div class="mt-3 text-sm text-gray-400 bg-surface-200 rounded-lg p-3">{{ app.notes }}</div>
+                {% endif %}
+                <div class="mt-3 flex gap-2">
+                    <button @click="deleteApp({{ app.id }})" class="text-xs text-red-400 hover:underline">Delete</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not applications %}
+    <div class="text-center py-16">
+        <div class="w-16 h-16 bg-surface-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+        </div>
+        <h3 class="font-semibold text-white">No applications tracked yet</h3>
+        <p class="text-sm text-gray-500 mt-1">Save jobs from search or add manually</p>
+        <button @click="showAddModal = true" class="btn-primary text-sm mt-4">Add First Application</button>
+    </div>
+    {% endif %}
+
+    <!-- Add Modal -->
+    <div x-show="showAddModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div @click.outside="showAddModal = false" class="bg-surface-100 border border-white/10 rounded-2xl shadow-xl max-w-lg w-full p-6">
+            <h3 class="text-lg font-bold text-white mb-4">Add Application</h3>
+            <div class="space-y-3">
+                <input type="text" x-model="newApp.job_title" placeholder="Job Title *" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+                <input type="text" x-model="newApp.company" placeholder="Company" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+                <input type="text" x-model="newApp.location" placeholder="Location" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+                <input type="url" x-model="newApp.url" placeholder="Job URL" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+                <select x-model="newApp.status" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="saved">Saved</option>
+                    <option value="applied">Applied</option>
+                    <option value="screening">Screening</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                </select>
+                <textarea x-model="newApp.notes" rows="2" placeholder="Notes" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none resize-none"></textarea>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button @click="showAddModal = false" class="btn-secondary flex-1">Cancel</button>
+                <button @click="addApp()" :disabled="!newApp.job_title" class="btn-primary flex-1 disabled:opacity-50">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function tracker() {
+    return {
+        filter: '',
+        showAddModal: false,
+        newApp: { job_title: '', company: '', location: '', url: '', status: 'saved', notes: '' },
+
+        async updateStatus(id, status) {
+            await fetch(`/api/tracker/${id}/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status }),
+            });
+            showToast('Status updated');
+        },
+        async deleteApp(id) {
+            if (!confirm('Delete this application?')) return;
+            await fetch(`/api/tracker/${id}/delete`, { method: 'POST' });
+            location.reload();
+        },
+        async addApp() {
+            if (!this.newApp.job_title) return;
+            await fetch('/api/tracker/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(this.newApp),
+            });
+            this.showAddModal = false;
+            location.reload();
+        },
+    }
+}
+</script>
+{% endblock %}

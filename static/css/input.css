@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HireMate - Dark Mode + Orange Theme */
+
+/* Desktop nav links */
+.nav-item {
+    @apply text-sm font-medium text-gray-400 py-5 border-b-2 border-transparent transition-all whitespace-nowrap;
+}
+.nav-item:hover {
+    @apply text-white;
+}
+.nav-item.active {
+    @apply text-brand-400 border-brand-500;
+}
+
+/* Mobile nav items */
+.nav-item-mobile {
+    @apply block px-3 py-2.5 text-sm font-medium text-gray-400 rounded-lg transition-all;
+}
+.nav-item-mobile:hover {
+    @apply text-white bg-surface-200;
+}
+.nav-item-mobile.active {
+    @apply text-brand-400 bg-brand-500/10;
+}
+
+/* Buttons */
+.btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg shadow-brand-500/20 hover:shadow-xl hover:shadow-brand-500/30;
+}
+
+.btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-surface-200 text-gray-300 font-medium px-5 py-2.5 rounded-xl border border-white/10 hover:border-brand-500/40 hover:text-brand-400 hover:bg-surface-300 transition-all;
+}
+
+/* Feature cards */
+.feature-card {
+    @apply bg-surface-100 rounded-2xl border border-white/5 p-6 hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300;
+}
+
+.feature-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+}
+
+/* Stat cards */
+.stat-card {
+    @apply bg-surface-100 rounded-xl border border-white/5 p-4 text-center transition-all;
+}
+
+/* Status badges */
+.status-badge {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize;
+}
+
+.status-saved { @apply bg-gray-500/20 text-gray-400; }
+.status-applied { @apply bg-amber-500/20 text-amber-400; }
+.status-screening { @apply bg-blue-500/20 text-blue-400; }
+.status-interview { @apply bg-purple-500/20 text-purple-400; }
+.status-offer { @apply bg-emerald-500/20 text-emerald-400; }
+.status-rejected { @apply bg-red-500/20 text-red-400; }
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toast {
+    background: #f97316;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+    max-width: 320px;
+}
+
+.toast.error {
+    background: #dc2626;
+    box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(10px); }
+}
+
+/* Line clamp */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Smooth scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+    background: rgba(249, 115, 22, 0.3);
+    color: #fff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #08080a;
+}
+::-webkit-scrollbar-thumb {
+    background: #333336;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #48484a;
+}
+
+/* Input dark mode overrides */
+input, textarea, select {
+    color-scheme: dark;
+}

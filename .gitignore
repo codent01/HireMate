@@ -1,0 +1,28 @@
+# Databases (contain personal data)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/settings.json
+
+# Uploads (contain personal resumes)
+uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# IDE
+.claude/
+.idea/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/

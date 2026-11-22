@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% block title %}Resume AI - HireMate{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="resumeApp()">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Resume AI</h1>
+            <p class="text-gray-500 text-sm mt-1">Upload, analyze, and tailor your resume</p>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+        <!-- Upload & Resume List -->
+        <div class="md:col-span-1 space-y-6">
+            <!-- Upload -->
+            <div class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+                <h3 class="font-semibold text-white mb-4">Upload Resume</h3>
+                <div class="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-brand-500/40 transition cursor-pointer"
+                     @dragover.prevent="dragOver = true" @dragleave="dragOver = false"
+                     @drop.prevent="handleDrop($event)" @click="$refs.fileInput.click()"
+                     :class="dragOver ? 'border-brand-500 bg-brand-500/5' : ''">
+                    <input type="file" x-ref="fileInput" @change="uploadFile($event)" accept=".pdf,.docx,.doc,.txt" class="hidden">
+                    <svg class="w-10 h-10 text-gray-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-sm text-gray-400">Drop your resume or <span class="text-brand-500 font-medium">browse</span></p>
+                    <p class="text-xs text-gray-600 mt-1">PDF, DOCX, or TXT</p>
+                </div>
+                <div x-show="uploading" class="mt-3 text-sm text-brand-500 flex items-center gap-2">
+                    <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Uploading...
+                </div>
+            </div>
+
+            <!-- Resume List -->
+            <div class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+                <h3 class="font-semibold text-white mb-4">Your Resumes</h3>
+                {% if resumes %}
+                <div class="space-y-2">
+                    {% for r in resumes %}
+                    <div class="flex items-center gap-3 p-3 rounded-xl {% if r.is_primary %}bg-brand-500/10 border border-brand-500/20{% else %}hover:bg-surface-200{% endif %} transition">
+                        <div class="w-9 h-9 {% if r.is_primary %}bg-brand-500/15{% else %}bg-surface-300{% endif %} rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 {% if r.is_primary %}text-brand-400{% else %}text-gray-500{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-white truncate">{{ r.filename }}</div>
+                            <div class="text-xs text-gray-500">
+                                {% if r.ats_score %}ATS: {{ r.ats_score }}{% endif %}
+                                {% if r.is_primary %} &middot; Primary{% endif %}
+                            </div>
+                        </div>
+                        {% if not r.is_primary %}
+                        <button @click="setPrimary({{ r.id }})" class="text-xs text-brand-500 hover:underline">Set Primary</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 text-center py-4">No resumes uploaded yet</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tools -->
+        <div class="md:col-span-2 space-y-6">
+            <!-- Tab navigation -->
+            <div class="bg-surface-100 rounded-2xl border border-white/5 overflow-hidden">
+                <div class="flex border-b border-white/5">
+                    <button @click="activeTab = 'ats'" :class="activeTab === 'ats' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500'" class="flex-1 px-4 py-3 text-sm font-medium border-b-2 hover:text-brand-400 transition">ATS Check</button>
+                    <button @click="activeTab = 'match'" :class="activeTab === 'match' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500'" class="flex-1 px-4 py-3 text-sm font-medium border-b-2 hover:text-brand-400 transition">Job Match</button>
+                    <button @click="activeTab = 'tailor'" :class="activeTab === 'tailor' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500'" class="flex-1 px-4 py-3 text-sm font-medium border-b-2 hover:text-brand-400 transition">Tailor Resume</button>
+                    <button @click="activeTab = 'cover'" :class="activeTab === 'cover' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500'" class="flex-1 px-4 py-3 text-sm font-medium border-b-2 hover:text-brand-400 transition">Cover Letter</button>
+                </div>
+
+                <div class="p-6">
+                    <!-- ATS Check Tab -->
+                    <div x-show="activeTab === 'ats'">
+                        <h3 class="font-bold text-lg text-white mb-2">ATS Compatibility Check</h3>
+                        <p class="text-sm text-gray-500 mb-4">Score your resume against Applicant Tracking Systems</p>
+
+                        {% if resumes %}
+                        <div class="mb-4">
+                            <select x-model="selectedResume" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+                                {% for r in resumes %}
+                                <option value="{{ r.id }}">{{ r.filename }} {% if r.is_primary %}(Primary){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button @click="runAtsCheck()" :disabled="atsLoading" class="btn-primary disabled:opacity-50">
+                            <span x-show="!atsLoading">Run ATS Check</span>
+                            <span x-show="atsLoading" class="flex items-center gap-2">
+                                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                Analyzing...
+                            </span>
+                        </button>
+                        {% else %}
+                        <p class="text-sm text-gray-500">Upload a resume first to run ATS check.</p>
+                        {% endif %}
+
+                        <!-- ATS Results -->
+                        <div x-show="atsResult" class="mt-6 space-y-4">
+                            <div class="flex items-center gap-6 bg-brand-500/5 border border-brand-500/10 rounded-xl p-6">
+                                <div class="text-center">
+                                    <div class="text-4xl font-black" :class="atsResult?.score >= 70 ? 'text-emerald-500' : atsResult?.score >= 40 ? 'text-amber-500' : 'text-red-500'" x-text="atsResult?.score"></div>
+                                    <div class="text-xs text-gray-500 font-medium mt-1">/ 100</div>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-300" x-text="atsResult?.summary"></p>
+                                </div>
+                            </div>
+
+                            <div x-show="atsResult?.strengths?.length" class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+                                <h4 class="font-medium text-emerald-400 text-sm mb-2">Strengths</h4>
+                                <ul class="space-y-1">
+                                    <template x-for="s in atsResult?.strengths || []">
+                                        <li class="text-sm text-emerald-300 flex items-center gap-2">
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            <span x-text="s"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+
+                            <div x-show="atsResult?.issues?.length">
+                                <h4 class="font-medium text-sm text-white mb-2">Issues to Fix</h4>
+                                <div class="space-y-2">
+                                    <template x-for="issue in atsResult?.issues || []">
+                                        <div class="bg-surface-200 border border-white/5 rounded-xl p-3 flex items-start gap-3">
+                                            <span class="px-2 py-0.5 rounded text-xs font-bold" :class="issue.impact === 'high' ? 'bg-red-500/15 text-red-400' : issue.impact === 'medium' ? 'bg-amber-500/15 text-amber-400' : 'bg-surface-300 text-gray-400'" x-text="issue.impact"></span>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-medium text-white" x-text="issue.issue"></div>
+                                                <div class="text-xs text-gray-500 mt-1" x-text="issue.fix"></div>
+                                            </div>
+                                            <span class="text-xs font-bold text-brand-500" x-text="'+' + issue.points + ' pts'"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Match Tab -->
+                    <div x-show="activeTab === 'match'">
+                        <h3 class="font-bold text-lg text-white mb-2">Job Match Score</h3>
+                        <p class="text-sm text-gray-500 mb-4">Paste a job description to see how well your resume matches</p>
+                        <textarea x-model="jobDescription" rows="6" placeholder="Paste the full job description here..." class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none"></textarea>
+                        <button @click="runMatch()" :disabled="matchLoading || !jobDescription" class="btn-primary mt-3 disabled:opacity-50">
+                            <span x-show="!matchLoading">Check Match</span>
+                            <span x-show="matchLoading" class="flex items-center gap-2">
+                                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                Matching...
+                            </span>
+                        </button>
+
+                        <div x-show="matchResult" class="mt-6 bg-brand-500/5 border border-brand-500/10 rounded-xl p-6">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                <div class="text-center">
+                                    <div class="text-3xl font-black" :class="matchResult?.overall_score >= 70 ? 'text-emerald-500' : 'text-amber-500'" x-text="matchResult?.overall_score + '%'"></div>
+                                    <div class="text-xs text-gray-500">Overall</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-xl font-bold text-white" x-text="(matchResult?.skills_match?.score || 0) + '%'"></div>
+                                    <div class="text-xs text-gray-500">Skills</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-xl font-bold text-white" x-text="(matchResult?.experience_match?.score || 0) + '%'"></div>
+                                    <div class="text-xs text-gray-500">Experience</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-xl font-bold text-white" x-text="(matchResult?.education_match?.score || 0) + '%'"></div>
+                                    <div class="text-xs text-gray-500">Education</div>
+                                </div>
+                            </div>
+                            <div class="text-sm font-medium text-center text-gray-300" x-text="matchResult?.verdict"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tailor Tab -->
+                    <div x-show="activeTab === 'tailor'">
+                        <h3 class="font-bold text-lg text-white mb-2">Tailor Resume</h3>
+                        <p class="text-sm text-gray-500 mb-4">AI rewrites your resume to match a specific job</p>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <input type="text" x-model="tailorTitle" placeholder="Job title" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+                            <input type="text" x-model="tailorCompany" placeholder="Company" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+                        </div>
+                        <textarea x-model="tailorJD" rows="4" placeholder="Paste the job description..." class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none"></textarea>
+                        <button @click="runTailor()" :disabled="tailorLoading || !tailorJD" class="btn-primary mt-3 disabled:opacity-50">
+                            <span x-show="!tailorLoading">Tailor My Resume</span>
+                            <span x-show="tailorLoading" class="flex items-center gap-2">
+                                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                Tailoring...
+                            </span>
+                        </button>
+
+                        <div x-show="tailorResult" class="mt-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-medium text-white">Tailored Resume</span>
+                                <button @click="copyToClipboard(tailorResult?.tailored_resume)" class="text-xs text-brand-500 hover:underline">Copy to clipboard</button>
+                            </div>
+                            <div class="bg-surface-300 rounded-xl p-4 text-sm text-gray-300 whitespace-pre-wrap max-h-96 overflow-y-auto" x-text="tailorResult?.tailored_resume"></div>
+                            <div x-show="tailorResult?.changes_made?.length" class="mt-3">
+                                <div class="text-xs font-medium text-gray-500 mb-1">Changes made:</div>
+                                <div class="flex gap-1 flex-wrap">
+                                    <template x-for="c in tailorResult?.changes_made || []">
+                                        <span class="px-2 py-0.5 bg-brand-500/15 text-brand-400 rounded text-xs" x-text="c"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cover Letter Tab -->
+                    <div x-show="activeTab === 'cover'">
+                        <h3 class="font-bold text-lg text-white mb-2">Generate Cover Letter</h3>
+                        <p class="text-sm text-gray-500 mb-4">AI-generated cover letter personalized to each job</p>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <input type="text" x-model="coverTitle" placeholder="Job title" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+                            <input type="text" x-model="coverCompany" placeholder="Company" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+                        </div>
+                        <textarea x-model="coverJD" rows="4" placeholder="Paste the job description..." class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none"></textarea>
+                        <button @click="runCoverLetter()" :disabled="coverLoading || !coverJD" class="btn-primary mt-3 disabled:opacity-50">
+                            <span x-show="!coverLoading">Generate Cover Letter</span>
+                            <span x-show="coverLoading" class="flex items-center gap-2">
+                                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                Writing...
+                            </span>
+                        </button>
+
+                        <div x-show="coverLetter" class="mt-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-medium text-white">Your Cover Letter</span>
+                                <button @click="copyToClipboard(coverLetter)" class="text-xs text-brand-500 hover:underline">Copy to clipboard</button>
+                            </div>
+                            <div class="bg-surface-300 rounded-xl p-4 text-sm text-gray-300 whitespace-pre-wrap" x-text="coverLetter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function resumeApp() {
+    return {
+        activeTab: 'ats',
+        uploading: false,
+        dragOver: false,
+        selectedResume: '{{ resumes[0].id if resumes else "" }}',
+        atsLoading: false, atsResult: null,
+        jobDescription: '', matchLoading: false, matchResult: null,
+        tailorTitle: '', tailorCompany: '', tailorJD: '', tailorLoading: false, tailorResult: null,
+        coverTitle: '', coverCompany: '', coverJD: '', coverLoading: false, coverLetter: '',
+
+        async uploadFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            await this.doUpload(file);
+        },
+        async handleDrop(e) {
+            this.dragOver = false;
+            const file = e.dataTransfer.files[0];
+            if (file) await this.doUpload(file);
+        },
+        async doUpload(file) {
+            this.uploading = true;
+            const form = new FormData();
+            form.append('file', file);
+            try {
+                const resp = await fetch('/api/resume/upload', { method: 'POST', body: form });
+                const data = await resp.json();
+                if (data.error) { showToast(data.error, 'error'); return; }
+                showToast('Resume uploaded!');
+                location.reload();
+            } catch (e) { showToast('Upload failed', 'error'); }
+            this.uploading = false;
+        },
+        async setPrimary(id) {
+            await fetch(`/api/resume/${id}/set-primary`, { method: 'POST' });
+            location.reload();
+        },
+        async runAtsCheck() {
+            if (!this.selectedResume) return;
+            this.atsLoading = true;
+            try {
+                const resp = await fetch(`/api/resume/${this.selectedResume}/ats-check`, { method: 'POST' });
+                this.atsResult = await resp.json();
+            } catch (e) { showToast('ATS check failed', 'error'); }
+            this.atsLoading = false;
+        },
+        async runMatch() {
+            this.matchLoading = true;
+            try {
+                const resp = await fetch('/api/resume/match', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ job_description: this.jobDescription }),
+                });
+                this.matchResult = await resp.json();
+            } catch (e) { showToast('Match failed', 'error'); }
+            this.matchLoading = false;
+        },
+        async runTailor() {
+            this.tailorLoading = true;
+            try {
+                const resp = await fetch('/api/resume/tailor', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ job_description: this.tailorJD, job_title: this.tailorTitle, company: this.tailorCompany }),
+                });
+                this.tailorResult = await resp.json();
+            } catch (e) { showToast('Tailoring failed', 'error'); }
+            this.tailorLoading = false;
+        },
+        async runCoverLetter() {
+            this.coverLoading = true;
+            try {
+                const resp = await fetch('/api/resume/cover-letter', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ job_description: this.coverJD, job_title: this.coverTitle, company: this.coverCompany }),
+                });
+                const data = await resp.json();
+                this.coverLetter = data.cover_letter;
+            } catch (e) { showToast('Generation failed', 'error'); }
+            this.coverLoading = false;
+        },
+        copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast('Copied to clipboard!');
+        },
+    }
+}
+</script>
+{% endblock %}

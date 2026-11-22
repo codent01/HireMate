@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Find HR - HireMate{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="hrFinder()">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-white">Find the Hiring Team</h1>
+        <p class="text-gray-500 text-sm mt-1">AI suggests who to contact and how to reach them</p>
+    </div>
+
+    <!-- Search -->
+    <div class="bg-surface-100 rounded-2xl border border-white/5 p-6 mb-6">
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="md:col-span-1">
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Company</label>
+                <input type="text" x-model="company" placeholder="e.g. Google" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+            </div>
+            <div class="md:col-span-1">
+                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Role (optional)</label>
+                <input type="text" x-model="jobTitle" placeholder="e.g. Software Engineer" class="w-full bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none">
+            </div>
+            <div class="flex items-end">
+                <button @click="findHR()" :disabled="loading || !company" class="btn-primary w-full py-2.5 disabled:opacity-50">
+                    <span x-show="!loading">Find Contacts</span>
+                    <span x-show="loading" class="flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        Searching...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="space-y-6">
+        <!-- Suggested Titles -->
+        <div x-show="result?.suggested_titles?.length" class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <h3 class="font-semibold text-white mb-3">People to Contact</h3>
+            <div class="grid md:grid-cols-2 gap-3">
+                <template x-for="title in result?.suggested_titles || []">
+                    <div class="flex items-center gap-3 p-3 bg-surface-200 rounded-xl">
+                        <div class="w-9 h-9 bg-brand-500/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-gray-300" x-text="title"></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Email Patterns -->
+        <div x-show="result?.email_patterns?.length" class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <h3 class="font-semibold text-white mb-3">Email Patterns</h3>
+            <div class="space-y-2">
+                <template x-for="pattern in result?.email_patterns || []">
+                    <div class="flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <code class="bg-surface-300 text-brand-400 px-2 py-0.5 rounded text-xs" x-text="pattern"></code>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- LinkedIn Search -->
+        <div x-show="result?.linkedin_search_query" class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <h3 class="font-semibold text-white mb-3">LinkedIn Search</h3>
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center gap-3">
+                <svg class="w-5 h-5 text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                <div class="flex-1">
+                    <div class="text-xs text-blue-400 font-medium mb-1">Suggested search query:</div>
+                    <div class="text-sm font-medium text-gray-300" x-text="result?.linkedin_search_query"></div>
+                </div>
+                <button @click="copyToClipboard(result?.linkedin_search_query)" class="text-xs text-blue-400 hover:underline">Copy</button>
+            </div>
+        </div>
+
+        <!-- Outreach Template -->
+        <div x-show="result?.outreach_template" class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-white">Outreach Template</h3>
+                <button @click="copyToClipboard(result?.outreach_template)" class="text-xs text-brand-500 hover:underline">Copy</button>
+            </div>
+            <div class="bg-surface-300 rounded-xl p-4 text-sm text-gray-300 whitespace-pre-wrap" x-text="result?.outreach_template"></div>
+        </div>
+
+        <!-- Search Tips -->
+        <div x-show="result?.search_tips?.length" class="bg-surface-100 rounded-2xl border border-white/5 p-6">
+            <h3 class="font-semibold text-white mb-3">Search Tips</h3>
+            <ul class="space-y-2">
+                <template x-for="tip in result?.search_tips || []">
+                    <li class="flex items-start gap-2 text-sm text-gray-400">
+                        <svg class="w-4 h-4 text-brand-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span x-text="tip"></span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Saved Contacts -->
+    <div class="mt-8">
+        <h2 class="text-xl font-bold text-white mb-4">Saved Contacts</h2>
+        {% if contacts %}
+        <div class="grid md:grid-cols-2 gap-4">
+            {% for c in contacts %}
+            <div class="bg-surface-100 rounded-xl border border-white/5 p-4 flex items-start gap-3">
+                <div class="w-10 h-10 bg-brand-500/10 rounded-full flex items-center justify-center text-brand-400 font-bold text-sm flex-shrink-0">
+                    {{ c.name[:2] | upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-sm text-white">{{ c.name }}</div>
+                    <div class="text-xs text-gray-500">{{ c.title or '' }} {% if c.company %}&middot; {{ c.company }}{% endif %}</div>
+                    {% if c.email %}<div class="text-xs text-brand-400 mt-1">{{ c.email }}</div>{% endif %}
+                    {% if c.notes %}<div class="text-xs text-gray-600 mt-1">{{ c.notes }}</div>{% endif %}
+                </div>
+                <button @click="deleteContact({{ c.id }})" class="text-xs text-red-400 hover:text-red-300">Remove</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-500">No contacts saved yet. Use the search above to find hiring team members.</p>
+        {% endif %}
+    </div>
+
+    <!-- Add Contact -->
+    <div class="mt-6 bg-surface-100 rounded-2xl border border-white/5 p-6">
+        <h3 class="font-semibold text-white mb-4">Add Contact Manually</h3>
+        <div class="grid md:grid-cols-3 gap-3">
+            <input type="text" x-model="newContact.name" placeholder="Name *" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            <input type="text" x-model="newContact.title" placeholder="Title" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            <input type="text" x-model="newContact.company" placeholder="Company" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            <input type="email" x-model="newContact.email" placeholder="Email" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            <input type="url" x-model="newContact.linkedin" placeholder="LinkedIn URL" class="bg-surface-300 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-500 outline-none">
+            <button @click="saveContact()" :disabled="!newContact.name" class="btn-primary disabled:opacity-50">Save Contact</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function hrFinder() {
+    return {
+        company: '', jobTitle: '', loading: false, result: null,
+        newContact: { name: '', title: '', company: '', email: '', linkedin: '' },
+
+        async findHR() {
+            this.loading = true;
+            try {
+                const resp = await fetch('/api/find-hr', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ company: this.company, job_title: this.jobTitle }),
+                });
+                this.result = await resp.json();
+            } catch (e) { showToast('Search failed', 'error'); }
+            this.loading = false;
+        },
+        async saveContact() {
+            if (!this.newContact.name) return;
+            await fetch('/api/contacts/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(this.newContact),
+            });
+            showToast('Contact saved!');
+            location.reload();
+        },
+        async deleteContact(id) {
+            await fetch(`/api/contacts/delete/${id}`, { method: 'POST' });
+            location.reload();
+        },
+        copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast('Copied!');
+        },
+    }
+}
+</script>
+{% endblock %}

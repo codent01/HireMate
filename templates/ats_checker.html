@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}ATS Resume Checker - HireMate{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="atsChecker()">
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-bold text-white">ATS Resume Checker</h1>
+        <p class="text-gray-500 mt-2">Upload your resume and get an instant ATS compatibility score</p>
+    </div>
+
+    <div class="bg-surface-100 rounded-2xl border border-white/5 p-8">
+        <!-- Upload -->
+        <div x-show="!result" class="text-center">
+            <div class="border-2 border-dashed border-white/10 rounded-2xl p-12 hover:border-brand-500/40 transition cursor-pointer"
+                 @dragover.prevent="dragOver = true" @dragleave="dragOver = false"
+                 @drop.prevent="handleDrop($event)" @click="$refs.fileInput.click()"
+                 :class="dragOver ? 'border-brand-500 bg-brand-500/5' : ''">
+                <input type="file" x-ref="fileInput" @change="checkResume($event)" accept=".pdf,.docx,.doc,.txt" class="hidden">
+                <svg class="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-lg font-medium text-gray-300">Drop your resume here</p>
+                <p class="text-sm text-gray-500 mt-1">or <span class="text-brand-500 font-medium">browse files</span></p>
+                <p class="text-xs text-gray-600 mt-3">Supports PDF, DOCX, DOC, TXT</p>
+            </div>
+
+            <div x-show="loading" class="mt-6">
+                <div class="flex items-center justify-center gap-3 text-brand-500">
+                    <svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <span class="font-medium">Analyzing your resume...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div x-show="result">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-white">ATS Analysis Results</h2>
+                <button @click="result = null" class="text-sm text-brand-500 hover:underline">Check Another</button>
+            </div>
+
+            <!-- Score -->
+            <div class="bg-brand-500/5 border border-brand-500/10 rounded-2xl p-8 mb-6">
+                <div class="flex items-center gap-8">
+                    <div class="text-center">
+                        <div class="text-6xl font-black" :class="result?.score >= 70 ? 'text-emerald-500' : result?.score >= 40 ? 'text-amber-500' : 'text-red-500'" x-text="result?.score"></div>
+                        <div class="text-sm text-gray-500 font-medium mt-1">out of 100</div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-gray-300" x-text="result?.summary"></p>
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <div>
+                                <div class="text-xs text-gray-500">Formatting</div>
+                                <div class="text-lg font-bold text-white" x-text="(result?.formatting_score || 0) + '%'"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500">Content</div>
+                                <div class="text-lg font-bold text-white" x-text="(result?.content_score || 0) + '%'"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500">Structure</div>
+                                <div class="text-lg font-bold text-white" x-text="(result?.structure_score || 0) + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strengths -->
+            <div x-show="result?.strengths?.length" class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 mb-4">
+                <h3 class="font-semibold text-emerald-400 mb-3">What's Working</h3>
+                <div class="space-y-2">
+                    <template x-for="s in result?.strengths || []">
+                        <div class="flex items-center gap-2 text-sm text-emerald-300">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            <span x-text="s"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Issues -->
+            <div x-show="result?.issues?.length" class="mb-4">
+                <h3 class="font-semibold text-white mb-3">Issues to Fix</h3>
+                <div class="space-y-3">
+                    <template x-for="issue in result?.issues || []">
+                        <div class="bg-surface-200 border border-white/5 rounded-xl p-4 flex items-start gap-4">
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0" :class="issue.impact === 'high' ? 'bg-red-500/15 text-red-400' : issue.impact === 'medium' ? 'bg-amber-500/15 text-amber-400' : 'bg-surface-300 text-gray-400'" x-text="issue.impact"></span>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm text-white" x-text="issue.issue"></div>
+                                <div class="text-xs text-gray-500 mt-1" x-text="issue.fix"></div>
+                            </div>
+                            <span class="text-sm font-bold text-brand-500 flex-shrink-0" x-text="'+' + issue.points + ' pts'"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div x-show="result?.recommendations?.length">
+                <h3 class="font-semibold text-white mb-3">Recommendations</h3>
+                <ul class="space-y-2">
+                    <template x-for="rec in result?.recommendations || []">
+                        <li class="flex items-start gap-2 text-sm text-gray-400">
+                            <span class="text-brand-500 mt-1">&#9679;</span>
+                            <span x-text="rec"></span>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <div class="mt-8 flex gap-3">
+                <a href="/resume" class="btn-primary">Tailor My Resume</a>
+                <a href="/jobs" class="btn-secondary">Find Matching Jobs</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function atsChecker() {
+    return {
+        loading: false, dragOver: false, result: null,
+
+        async checkResume(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            await this.analyze(file);
+        },
+        async handleDrop(e) {
+            this.dragOver = false;
+            const file = e.dataTransfer.files[0];
+            if (file) await this.analyze(file);
+        },
+        async analyze(file) {
+            this.loading = true;
+            const form = new FormData();
+            form.append('file', file);
+            try {
+                const uploadResp = await fetch('/api/resume/upload', { method: 'POST', body: form });
+                const uploadData = await uploadResp.json();
+                if (uploadData.error) { showToast(uploadData.error, 'error'); this.loading = false; return; }
+                const atsResp = await fetch(`/api/resume/${uploadData.id}/ats-check`, { method: 'POST' });
+                this.result = await atsResp.json();
+            } catch (e) { showToast('Analysis failed', 'error'); }
+            this.loading = false;
+        },
+    }
+}
+</script>
+{% endblock %}
