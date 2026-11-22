@@ -14,6 +14,25 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/landing.png" alt="Landing Page" width="700"/>
+</p>
+<p align="center"><em>Landing Page</em></p>
+
+<p align="center">
+  <img src="screenshots/jobs.png" alt="Job Discovery" width="700"/>
+</p>
+<p align="center"><em>AI-Powered Job Discovery</em></p>
+
+<p align="center">
+  <img src="screenshots/tracker.png" alt="Application Tracker" width="700"/>
+</p>
+<p align="center"><em>Application Tracker Pipeline</em></p>
+
+---
+
 ## What is HireMate?
 
 **HireMate** is a local-first, full-stack job search assistant that brings together everything you need for your job hunt in one dashboard. It runs as a Flask web app on your machine, keeping all your data private and under your control.
